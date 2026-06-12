@@ -1,0 +1,19 @@
+.github/workflows/deploy.yml
+  s_4a69ce9ab6af30::t_d42df14ac24beb 83,89-92,97-102,104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "4002b01ecc1a1f9f2954ce2ec64c9322d7146176",
+  "prompts": {},
+  "sessions": {
+    "s_4a69ce9ab6af30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb69f-d86b-7a83-b64d-3d153040f167",
+        "model": "gpt-5.5"
+      },
+      "human_author": "5945ggh <1282835294@qq.com>"
+    }
+  }
+}
