@@ -4,7 +4,7 @@ import { clearAdminSessionCookie } from "@/lib/session/admin-session";
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.redirect(new URL("/login", request.url), { status: 303 });
-  clearAdminSessionCookie(response);
+  clearAdminSessionCookie(response, request);
 
   return response;
 }

@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
   AdminSession,
@@ -17,7 +17,25 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   return decodeAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
 }
 
-export async function setAdminSessionCookie(response: NextResponse, session: AdminSession): Promise<boolean> {
+function shouldUseSecureCookie(request?: NextRequest): boolean {
+  const forwardedProto = request?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+
+  if (forwardedProto) {
+    return forwardedProto === "https";
+  }
+
+  if (request) {
+    return request.nextUrl.protocol === "https:";
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
+export async function setAdminSessionCookie(
+  response: NextResponse,
+  session: AdminSession,
+  request?: NextRequest,
+): Promise<boolean> {
   const value = await encodeAdminSession(session);
 
   if (!value) {
@@ -26,16 +44,16 @@ export async function setAdminSessionCookie(response: NextResponse, session: Adm
 
   response.cookies.set(ADMIN_SESSION_COOKIE, value, {
     ...adminSessionCookieOptions,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie(request),
   });
 
   return true;
 }
 
-export function clearAdminSessionCookie(response: NextResponse) {
+export function clearAdminSessionCookie(response: NextResponse, request?: NextRequest) {
   response.cookies.set(ADMIN_SESSION_COOKIE, "", {
     ...adminSessionCookieOptions,
     maxAge: 0,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie(request),
   });
 }

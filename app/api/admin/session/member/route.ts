@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const didSetSession = await setAdminSessionCookie(response, {
     authenticated: true,
     selectedMemberId: selectedMember.id,
-  });
+  }, request);
 
   if (!didSetSession) {
     return NextResponse.json({ error: "session_secret_not_configured" }, { status: 503 });
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest) {
   const didSetSession = await setAdminSessionCookie(response, {
     authenticated: true,
     selectedMemberId: selectedMember.id,
-  });
+  }, request);
 
   if (!didSetSession) {
     return NextResponse.json({ error: "session_secret_not_configured" }, { status: 503 });

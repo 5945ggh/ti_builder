@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ ok: true });
-  const didSetSession = await setAdminSessionCookie(response, { authenticated: true });
+  const didSetSession = await setAdminSessionCookie(response, { authenticated: true }, request);
 
   if (!didSetSession) {
     return NextResponse.json({ error: "session_secret_not_configured" }, { status: 503 });
