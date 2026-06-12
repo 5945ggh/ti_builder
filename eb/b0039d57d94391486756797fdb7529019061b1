@@ -1,0 +1,25 @@
+app/admin/questionnaires/[id]/page.tsx
+  s_13112165940c69::t_94c93554b5345b 6,19,105-109
+app/admin/questionnaires/questionnaire-editor-form.tsx
+  s_13112165940c69::t_e80faa8dab9b54 25,40-44,93-94,118
+lib/env.ts
+  s_13112165940c69::t_a2ddb22dd706c7 11
+app/admin/questionnaires/actions.ts
+  s_13112165940c69::t_27eef5bec5997a 13,75-86,244
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "ebb0039d57d94391486756797fdb7529019061b1",
+  "prompts": {},
+  "sessions": {
+    "s_13112165940c69": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb6cb-55f3-7ae3-bc9e-493e7c4707a9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "5945ggh <1282835294@qq.com>"
+    }
+  }
+}
