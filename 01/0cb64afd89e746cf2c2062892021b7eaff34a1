@@ -1,0 +1,21 @@
+app/admin/questionnaires/page.tsx
+  s_13112165940c69::t_622681478d4b75 29-50,93-143
+app/globals.css
+  s_13112165940c69::t_00785504e3a517 459-464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "010cb64afd89e746cf2c2062892021b7eaff34a1",
+  "prompts": {},
+  "sessions": {
+    "s_13112165940c69": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb6cb-55f3-7ae3-bc9e-493e7c4707a9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "5945ggh <1282835294@qq.com>"
+    }
+  }
+}
