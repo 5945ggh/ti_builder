@@ -1,0 +1,188 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Test schema and core logic
+        run: npm run test:schema
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Create release archive
+        run: |
+          set -euo pipefail
+
+          mkdir -p deploy-artifact
+
+          tar -czf deploy-artifact/release.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.next/cache' \
+            --exclude='data/*.sqlite' \
+            --exclude='data/*.sqlite-*' \
+            .env.example \
+            README.md \
+            package.json \
+            package-lock.json \
+            next.config.ts \
+            next-env.d.ts \
+            tsconfig.json \
+            drizzle.config.ts \
+            instrumentation.ts \
+            middleware.ts \
+            app \
+            components \
+            lib \
+            scripts \
+            drizzle \
+            data/.gitkeep \
+            .next \
+            node_modules
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_SSH_KEY"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" > ~/.ssh/known_hosts
+          fi
+
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload release archive
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+
+          remote="${DEPLOY_USER}@${DEPLOY_HOST}"
+          port="${DEPLOY_PORT:-22}"
+
+          scp -i ~/.ssh/deploy_key \
+            -P "$port" \
+            -o IdentitiesOnly=yes \
+            deploy-artifact/release.tar.gz \
+            "$remote:/tmp/ti-builder-${GITHUB_SHA}.tar.gz"
+
+      - name: Deploy on server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SERVICE: ${{ secrets.DEPLOY_SERVICE }}
+          DEPLOY_DATABASE_URL: ${{ secrets.DEPLOY_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+
+          remote="${DEPLOY_USER}@${DEPLOY_HOST}"
+          port="${DEPLOY_PORT:-22}"
+          app_dir="${DEPLOY_PATH:-/var/www/ti-builder}"
+          service="${DEPLOY_SERVICE:-ti-builder}"
+          db_url="${DEPLOY_DATABASE_URL:-file:${app_dir}/shared/data/workbench.sqlite}"
+
+          ssh -i ~/.ssh/deploy_key \
+            -p "$port" \
+            -o IdentitiesOnly=yes \
+            "$remote" \
+            "APP_DIR='$app_dir' SERVICE='$service' SHA='$GITHUB_SHA' DB_URL='$db_url' bash -s" <<'REMOTE_SCRIPT'
+          set -euo pipefail
+
+          release_dir="$APP_DIR/releases/$SHA"
+          archive="/tmp/ti-builder-$SHA.tar.gz"
+
+          mkdir -p "$APP_DIR/releases" "$APP_DIR/shared/data" "$release_dir"
+
+          tar -xzf "$archive" -C "$release_dir"
+          rm -f "$archive"
+
+          rm -rf "$release_dir/data"
+          ln -sfn "$APP_DIR/shared/data" "$release_dir/data"
+
+          if [ -f "$APP_DIR/shared/.env.local" ]; then
+            ln -sfn "$APP_DIR/shared/.env.local" "$release_dir/.env.local"
+          fi
+
+          cd "$release_dir"
+
+          DATABASE_URL="$DB_URL" npm run db:migrate
+          DATABASE_URL="$DB_URL" npm run db:seed
+
+          ln -sfn "$release_dir" "$APP_DIR/current"
+
+          cd "$APP_DIR/current"
+
+          if ! command -v pm2 >/dev/null 2>&1; then
+            echo "pm2 is not installed on the server." >&2
+            exit 1
+          fi
+
+          if pm2 describe "$SERVICE" >/dev/null 2>&1; then
+            pm2 delete "$SERVICE"
+          fi
+
+          DATABASE_URL="$DB_URL" pm2 start npm --name "$SERVICE" -- run start
+          pm2 save
+
+          find "$APP_DIR/releases" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf
+          REMOTE_SCRIPT
