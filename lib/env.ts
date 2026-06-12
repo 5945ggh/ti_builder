@@ -8,6 +8,7 @@ const envSchema = z.object({
   AI_API_BASE_URL: z.string().url().optional(),
   AI_API_KEY: z.string().min(1).optional(),
   AI_MODEL: z.string().min(1).optional(),
+  AI_SCHEMA_SOURCE_MAX_CHARS: z.coerce.number().int().min(20).default(51_200),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createDb } from "@/lib/db/client";
 import { members, questionnaireVersions, questionnaires, responses } from "@/lib/db/schema";
+import { getServerEnv } from "@/lib/env";
 import { validateQuestionnaireDraftText } from "@/lib/questionnaires/draft";
 import { QuestionnaireEditorForm } from "../questionnaire-editor-form";
 import { QuestionnairePublishPanel } from "../questionnaire-publish-panel";
@@ -15,6 +16,7 @@ type EditQuestionnairePageProps = {
 
 export default async function EditQuestionnairePage({ params }: EditQuestionnairePageProps) {
   const { id } = await params;
+  const schemaSourceMaxChars = getServerEnv().AI_SCHEMA_SOURCE_MAX_CHARS;
   const db = createDb();
   const item = db
     .select({
@@ -100,7 +102,11 @@ export default async function EditQuestionnairePage({ params }: EditQuestionnair
       </section>
 
       <div className="editor-layout">
-        <QuestionnaireEditorForm questionnaire={item} initialValidation={validation.ok ? null : validation.error} />
+        <QuestionnaireEditorForm
+          questionnaire={item}
+          initialValidation={validation.ok ? null : validation.error}
+          schemaSourceMaxChars={schemaSourceMaxChars}
+        />
       </div>
 
       <div className="publish-layout">

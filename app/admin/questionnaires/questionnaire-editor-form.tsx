@@ -22,6 +22,7 @@ type QuestionnaireEditorFormProps = {
     currentDraftSchema: string;
   };
   initialValidation: string | null;
+  schemaSourceMaxChars: number;
 };
 
 const initialState: QuestionnaireFormState = {};
@@ -36,7 +37,11 @@ const generationModes = [
   ["open_scoring_prompts", "生成开放题评分 prompt"],
 ] as const;
 
-export function QuestionnaireEditorForm({ questionnaire, initialValidation }: QuestionnaireEditorFormProps) {
+export function QuestionnaireEditorForm({
+  questionnaire,
+  initialValidation,
+  schemaSourceMaxChars,
+}: QuestionnaireEditorFormProps) {
   const [state, formAction, isPending] = useActionState(updateQuestionnaireAction, initialState);
   const [generateState, generateAction, isGenerating] = useActionState(generateSchemaDraftAction, initialGenerateState);
   const [confirmState, confirmAction, isConfirming] = useActionState(
@@ -85,7 +90,8 @@ export function QuestionnaireEditorForm({ questionnaire, initialValidation }: Qu
             <div className="kicker">[ SYS.AI_COGNITIVE_GENERATOR ]</div>
             <h2 style={{ fontSize: "var(--text-lg)" }}>AI 辅助 Schema 生成与修改建议</h2>
             <p className="lead compact" style={{ fontSize: "var(--text-sm)" }}>
-              粘贴原始测评大纲或文本，自动生成结构化 JSON 草稿。
+              粘贴原始测评大纲或文本，自动生成结构化 JSON 草稿。当前来源文本上限：
+              {schemaSourceMaxChars.toLocaleString("zh-CN")} 字符。
             </p>
           </div>
         </summary>
@@ -109,7 +115,7 @@ export function QuestionnaireEditorForm({ questionnaire, initialValidation }: Qu
             <label className="field">
               <span>来源文本</span>
               <textarea
-                maxLength={20_000}
+                maxLength={schemaSourceMaxChars}
                 minLength={20}
                 name="sourceText"
                 placeholder="粘贴原始文案、大纲维度、选项设置或开放题评分要求..."

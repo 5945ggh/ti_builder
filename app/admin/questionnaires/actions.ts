@@ -10,6 +10,7 @@ import { generateQuestionnaireSchemaDraft, schemaDraftGenerationModeSchema } fro
 import { requireSelectedAdminMember } from "@/lib/auth/admin";
 import { createDb } from "@/lib/db/client";
 import { questionnaires } from "@/lib/db/schema";
+import { getServerEnv } from "@/lib/env";
 import { confirmQuestionnaireDraftUpdate } from "@/lib/questionnaires/draft-server";
 import { publishQuestionnaireVersion } from "@/lib/questionnaires/publish";
 import {
@@ -71,16 +72,18 @@ const publishQuestionnaireFormSchema = z.object({
   publishNote: z.string().trim().min(1, "Publish note is required.").max(2000, "Publish note is too long."),
 });
 
-const generateSchemaDraftFormSchema = z.object({
-  questionnaireId: z.string().trim().min(1, "Questionnaire ID is required."),
-  mode: schemaDraftGenerationModeSchema,
-  sourceText: z
-    .string()
-    .trim()
-    .min(20, "Source text must be at least 20 characters.")
-    .max(20_000, "Source text must be 20,000 characters or less."),
-  existingDraftSchema: z.string().max(60_000, "Existing draft context is too long.").optional(),
-});
+function generateSchemaDraftFormSchema(sourceMaxChars: number) {
+  return z.object({
+    questionnaireId: z.string().trim().min(1, "Questionnaire ID is required."),
+    mode: schemaDraftGenerationModeSchema,
+    sourceText: z
+      .string()
+      .trim()
+      .min(20, "Source text must be at least 20 characters.")
+      .max(sourceMaxChars, `Source text must be ${sourceMaxChars.toLocaleString("en-US")} characters or less.`),
+    existingDraftSchema: z.string().max(60_000, "Existing draft context is too long.").optional(),
+  });
+}
 
 const confirmGeneratedDraftFormSchema = z.object({
   questionnaireId: z.string().trim().min(1, "Questionnaire ID is required."),
@@ -238,7 +241,7 @@ export async function generateSchemaDraftAction(
   formData: FormData,
 ): Promise<GenerateSchemaDraftFormState> {
   await requireSelectedAdminMember();
-  const parsed = generateSchemaDraftFormSchema.safeParse({
+  const parsed = generateSchemaDraftFormSchema(getServerEnv().AI_SCHEMA_SOURCE_MAX_CHARS).safeParse({
     questionnaireId: formValue(formData, "questionnaireId"),
     mode: formValue(formData, "mode"),
     sourceText: formValue(formData, "sourceText"),
