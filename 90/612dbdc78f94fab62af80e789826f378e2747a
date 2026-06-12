@@ -1,0 +1,25 @@
+lib/session/admin-session.ts
+  s_13112165940c69::t_0fb648c7f721ed 2,20-38,47,53,57
+app/api/admin/session/member/route.ts
+  s_13112165940c69::t_7e5bf9ea2243cb 51,107
+app/api/auth/logout/route.ts
+  s_13112165940c69::t_7fd25c064bb2c0 7
+app/api/auth/login/route.ts
+  s_13112165940c69::t_f7fe07f28ddf40 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "90612dbdc78f94fab62af80e789826f378e2747a",
+  "prompts": {},
+  "sessions": {
+    "s_13112165940c69": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb6cb-55f3-7ae3-bc9e-493e7c4707a9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "5945ggh <1282835294@qq.com>"
+    }
+  }
+}
