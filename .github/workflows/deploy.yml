@@ -80,18 +80,28 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
 
           test -n "$DEPLOY_HOST"
-          test -n "$DEPLOY_SSH_KEY"
+          if [ -z "${DEPLOY_SSH_KEY:-}" ] && [ -z "${DEPLOY_SSH_KEY_B64:-}" ]; then
+            echo "Set DEPLOY_SSH_KEY or DEPLOY_SSH_KEY_B64 in repository secrets." >&2
+            exit 1
+          fi
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          if [ -n "${DEPLOY_SSH_KEY_B64:-}" ]; then
+            printf '%s' "$DEPLOY_SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+          else
+            printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          fi
+
           chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
 
           if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
             printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
