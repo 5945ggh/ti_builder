@@ -26,6 +26,28 @@ export default async function QuestionnairesPage() {
     .groupBy(questionnaires.id, members.name)
     .orderBy(desc(questionnaires.updatedAt))
     .all();
+  const latestVersions = db
+    .select({
+      questionnaireId: questionnaireVersions.questionnaireId,
+      versionId: questionnaireVersions.id,
+      versionNumber: questionnaireVersions.versionNumber,
+    })
+    .from(questionnaireVersions)
+    .orderBy(desc(questionnaireVersions.versionNumber))
+    .all();
+  const latestVersionByQuestionnaireId = new Map<
+    string,
+    { versionId: string; versionNumber: number }
+  >();
+
+  for (const version of latestVersions) {
+    if (!latestVersionByQuestionnaireId.has(version.questionnaireId)) {
+      latestVersionByQuestionnaireId.set(version.questionnaireId, {
+        versionId: version.versionId,
+        versionNumber: version.versionNumber,
+      });
+    }
+  }
 
   return (
     <main className="workspace">
@@ -68,45 +90,57 @@ export default async function QuestionnairesPage() {
           <span>管理操作</span>
         </div>
         {items.length > 0 ? (
-          items.map((item) => (
-            <div className="row" key={item.id}>
-              <span>
-                <strong style={{ fontSize: "var(--text-base)", color: "var(--color-primary)" }}>
-                  {item.title}
-                </strong>
-                {item.description ? (
-                  <small style={{ marginTop: "2px", display: "block" }}>{item.description}</small>
-                ) : null}
-                {item.internalNote ? (
-                  <small style={{ marginTop: "4px", color: "var(--color-accent)", display: "block", fontStyle: "italic" }}>
-                    内部备注：{item.internalNote}
-                  </small>
-                ) : null}
-              </span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
-                {item.scenario || "DEFAULT"}
-              </span>
-              <span>{item.createdByName ?? "未知"}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
-                {item.updatedAt.toLocaleDateString("zh-CN") + " " + item.updatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-              <span style={{ fontFamily: "var(--font-mono)" }}>
-                {item.latestVersion > 0 ? (
-                  <span className="badge" style={{ border: "1px solid var(--color-primary)", background: "var(--color-primary-soft)" }}>
-                    v{item.latestVersion}
-                  </span>
-                ) : (
-                  <span className="badge subtle">DRAFT</span>
-                )}
-              </span>
-              <span style={{ fontFamily: "var(--font-mono)" }}>{item.responseCount} 份</span>
-              <span>
-                <Link className="text-link" href={`/admin/questionnaires/${item.id}`} style={{ fontWeight: "700" }}>
-                  配置与发布
-                </Link>
-              </span>
-            </div>
-          ))
+          items.map((item) => {
+            const latestVersion = latestVersionByQuestionnaireId.get(item.id);
+
+            return (
+              <div className="row" key={item.id}>
+                <span>
+                  <strong style={{ fontSize: "var(--text-base)", color: "var(--color-primary)" }}>
+                    {item.title}
+                  </strong>
+                  {item.description ? (
+                    <small style={{ marginTop: "2px", display: "block" }}>{item.description}</small>
+                  ) : null}
+                  {item.internalNote ? (
+                    <small style={{ marginTop: "4px", color: "var(--color-accent)", display: "block", fontStyle: "italic" }}>
+                      内部备注：{item.internalNote}
+                    </small>
+                  ) : null}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
+                  {item.scenario || "DEFAULT"}
+                </span>
+                <span>{item.createdByName ?? "未知"}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
+                  {item.updatedAt.toLocaleDateString("zh-CN") + " " + item.updatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)" }}>
+                  {latestVersion ? (
+                    <span className="badge" style={{ border: "1px solid var(--color-primary)", background: "var(--color-primary-soft)" }}>
+                      v{latestVersion.versionNumber}
+                    </span>
+                  ) : (
+                    <span className="badge subtle">DRAFT</span>
+                  )}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)" }}>{item.responseCount} 份</span>
+                <span className="table-actions">
+                  {latestVersion ? (
+                    <Link
+                      className="text-link"
+                      href={`/admin/questionnaires/${item.id}/versions/${latestVersion.versionId}/answer`}
+                    >
+                      内部作答
+                    </Link>
+                  ) : null}
+                  <Link className="text-link" href={`/admin/questionnaires/${item.id}`} style={{ fontWeight: "700" }}>
+                    配置与发布
+                  </Link>
+                </span>
+              </div>
+            );
+          })
         ) : (
           <div className="row empty-row">
             <span>暂无问卷记录。请先点击右上角“新建问卷草稿”开启生产。</span>

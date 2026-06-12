@@ -456,6 +456,12 @@ button.icon-button:hover {
   color: var(--color-primary-hover);
 }
 
+.table-actions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
 /* Technical Blueprint Tables */
 .table {
   margin-top: var(--space-4);
