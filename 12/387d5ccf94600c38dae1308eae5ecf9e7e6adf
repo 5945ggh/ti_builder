@@ -1,0 +1,22 @@
+app/admin/questionnaires/[id]/versions/[versionId]/answer/internal-answer-form.tsx
+  s_13112165940c69::t_62d0307f210081 87-88,93-96,115-117,120,122-124,126,128-137,150,153
+  s_13112165940c69::t_cb35773b15d728 42-55
+  s_13112165940c69::t_46d4fdf7110194 86,121,125,127
+  s_13112165940c69::t_d99b21bbfe515c 179,183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "12387d5ccf94600c38dae1308eae5ecf9e7e6adf",
+  "prompts": {},
+  "sessions": {
+    "s_13112165940c69": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb6cb-55f3-7ae3-bc9e-493e7c4707a9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "5945ggh <1282835294@qq.com>"
+    }
+  }
+}
