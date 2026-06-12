@@ -31,65 +31,85 @@ export default async function QuestionnairesPage() {
     <main className="workspace">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Questionnaires</p>
+          <p className="eyebrow">[ DATABASE_REGISTERS ]</p>
           <h1>问卷管理</h1>
         </div>
         <div className="topbar-actions">
           <Link className="button ghost" href="/admin">
-            后台首页
+            返回首页
           </Link>
           <Link className="button ghost" href="/admin/questionnaires/format-guide">
-            格式说明
+            JSON 格式指南
           </Link>
           <Link className="button" href="/admin/questionnaires/new">
-            新建问卷
+            新建问卷草稿
           </Link>
         </div>
       </header>
 
       {!selectedMember ? (
-        <section className="notice warn">
-          尚未选择当前操作者。可以浏览列表，但创建和保存草稿前需要先在后台首页选择成员。
+        <section className="notice warn" style={{ marginBottom: "var(--space-4)" }}>
+          [警告] 尚未选择当前操作者。您可以浏览现有问卷，但在执行“新建问卷”或“保存修改”前，请先返回主页选择或新增成员。
         </section>
       ) : (
-        <section className="notice ok">
-          当前归因成员：<strong>{selectedMember.name}</strong>
+        <section className="notice ok" style={{ marginBottom: "var(--space-4)" }}>
+          当前归因成员：<strong>{selectedMember.name}</strong> ({selectedMember.role})
         </section>
       )}
 
       <section className="table questionnaire-table" aria-label="问卷列表">
         <div className="row head">
-          <span>标题</span>
-          <span>场景</span>
+          <span>问卷标题 / 备注</span>
+          <span>场景标识</span>
           <span>创建者</span>
           <span>更新时间</span>
-          <span>最新版本</span>
-          <span>作答数</span>
-          <span>操作</span>
+          <span>版本状态</span>
+          <span>已收作答</span>
+          <span>管理操作</span>
         </div>
         {items.length > 0 ? (
           items.map((item) => (
             <div className="row" key={item.id}>
               <span>
-                <strong>{item.title}</strong>
-                {item.description ? <small>{item.description}</small> : null}
-                {item.internalNote ? <small>内部备注：{item.internalNote}</small> : null}
+                <strong style={{ fontSize: "var(--text-base)", color: "var(--color-primary)" }}>
+                  {item.title}
+                </strong>
+                {item.description ? (
+                  <small style={{ marginTop: "2px", display: "block" }}>{item.description}</small>
+                ) : null}
+                {item.internalNote ? (
+                  <small style={{ marginTop: "4px", color: "var(--color-accent)", display: "block", fontStyle: "italic" }}>
+                    内部备注：{item.internalNote}
+                  </small>
+                ) : null}
               </span>
-              <span>{item.scenario || "未设置"}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
+                {item.scenario || "DEFAULT"}
+              </span>
               <span>{item.createdByName ?? "未知"}</span>
-              <span>{item.updatedAt.toLocaleString("zh-CN")}</span>
-              <span>{item.latestVersion > 0 ? `v${item.latestVersion}` : "未发布"}</span>
-              <span>{item.responseCount}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}>
+                {item.updatedAt.toLocaleDateString("zh-CN") + " " + item.updatedAt.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)" }}>
+                {item.latestVersion > 0 ? (
+                  <span className="badge" style={{ border: "1px solid var(--color-primary)", background: "var(--color-primary-soft)" }}>
+                    v{item.latestVersion}
+                  </span>
+                ) : (
+                  <span className="badge subtle">DRAFT</span>
+                )}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)" }}>{item.responseCount} 份</span>
               <span>
-                <Link className="text-link" href={`/admin/questionnaires/${item.id}`}>
-                  编辑
+                <Link className="text-link" href={`/admin/questionnaires/${item.id}`} style={{ fontWeight: "700" }}>
+                  配置与发布
                 </Link>
               </span>
             </div>
           ))
         ) : (
           <div className="row empty-row">
-            <span>暂无问卷。先创建一个草稿。</span>
+            <span>暂无问卷记录。请先点击右上角“新建问卷草稿”开启生产。</span>
           </div>
         )}
       </section>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CopyableCodeBlock } from "./copyable-code-block";
 
 const minimalExample = `{
   "title": "学习决策风格小测",
@@ -68,15 +69,18 @@ const externalHelpPrompt = `请帮我把以下测评构思整理成 TI Builder q
 - open_text 的 scoringPrompt 必须要求后续评分 AI 只输出 JSON：{"deltaVector": {...}, "confidence": 0-1, "rationale": "..."}。
 - 不要写心理诊断、医学判断、确定性的学校/专业/职业建议。
 
+作为参考，目标 JSON 的大概结构应该是这样：
+${minimalExample}
+
 我的构思：
 <把素材粘贴在这里>`;
 
 export default function QuestionnaireFormatGuidePage() {
   return (
-    <main className="workspace wide">
+    <main className="workspace guide-workspace">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Questionnaire Schema</p>
+          <p className="eyebrow">问卷 Schema</p>
           <h1>问卷 JSON 格式说明</h1>
         </div>
         <div className="topbar-actions">
@@ -91,7 +95,7 @@ export default function QuestionnaireFormatGuidePage() {
 
       <section className="panel stack">
         <div>
-          <div className="kicker">Purpose</div>
+          <div className="kicker">用途</div>
           <h2>给人和外部 AI 看的基础格式</h2>
           <p className="lead compact">
             站内 AI 可以生成 schema，但问卷本身就是一份普通 JSON。你可以把下面的格式和 prompt 发给外部协作者，
@@ -102,7 +106,7 @@ export default function QuestionnaireFormatGuidePage() {
 
       <section className="panel stack">
         <div>
-          <div className="kicker">Shape</div>
+          <div className="kicker">结构</div>
           <h2>顶层字段</h2>
         </div>
         <div className="table guide-table" aria-label="顶层字段">
@@ -146,23 +150,23 @@ export default function QuestionnaireFormatGuidePage() {
 
       <section className="panel stack">
         <div>
-          <div className="kicker">Example</div>
+          <div className="kicker">模板</div>
           <h2>最小完整模板</h2>
         </div>
-        <pre className="code-sample">{minimalExample}</pre>
+        <CopyableCodeBlock content={minimalExample} />
       </section>
 
       <section className="panel stack">
         <div>
-          <div className="kicker">External Help</div>
+          <div className="kicker">外部求助</div>
           <h2>外部求助 prompt</h2>
         </div>
-        <pre className="code-sample">{externalHelpPrompt}</pre>
+        <CopyableCodeBlock content={externalHelpPrompt} />
       </section>
 
       <section className="panel stack">
         <div>
-          <div className="kicker">Checklist</div>
+          <div className="kicker">检查清单</div>
           <h2>粘贴前检查</h2>
         </div>
         <ul className="check-list">
