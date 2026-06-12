@@ -39,6 +39,20 @@ function hasOpenTextQuestion(questionnaire: QuestionnaireSchema) {
   return questionnaire.questions.some((question) => question.type === "open_text");
 }
 
+function createDraftFingerprint(input: {
+  answers: Answers;
+  respondentName: string;
+  respondentNote: string;
+  versionId: string;
+}) {
+  return JSON.stringify({
+    answers: input.answers,
+    respondentName: input.respondentName.trim(),
+    respondentNote: input.respondentNote,
+    versionId: input.versionId,
+  });
+}
+
 function statusExplanation(status: string, includesOpenText: boolean) {
   if (unfinishedAiStatuses.has(status)) {
     return includesOpenText
@@ -69,10 +83,17 @@ export function InternalAnswerForm({
 }: InternalAnswerFormProps) {
   const [state, formAction, isPending] = useActionState(submitInternalAnswerAction, initialState);
   const [clientSubmissionId, setClientSubmissionId] = useState("");
+  const [acknowledgedResponseId, setAcknowledgedResponseId] = useState<string | null>(null);
+  const [submittedDraftFingerprint, setSubmittedDraftFingerprint] = useState<string | null>(null);
+  const [pendingDraftFingerprint, setPendingDraftFingerprint] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>(() => createInitialAnswers(questionnaire));
   const [respondentName, setRespondentName] = useState(selectedMemberName);
   const [respondentNote, setRespondentNote] = useState("");
   const answersJson = useMemo(() => JSON.stringify(answers), [answers]);
+  const draftFingerprint = useMemo(
+    () => createDraftFingerprint({ answers, respondentName, respondentNote, versionId }),
+    [answers, respondentName, respondentNote, versionId],
+  );
   const includesOpenText = useMemo(() => hasOpenTextQuestion(questionnaire), [questionnaire]);
   const responseStatusExplanation = state.response
     ? statusExplanation(state.response.aiScoringStatus, includesOpenText)
@@ -91,7 +112,28 @@ export function InternalAnswerForm({
     );
     setRespondentName(typeof stored?.respondentName === "string" ? stored.respondentName : selectedMemberName);
     setRespondentNote(typeof stored?.respondentNote === "string" ? stored.respondentNote : "");
+    setSubmittedDraftFingerprint(
+      typeof stored?.submittedDraftFingerprint === "string" ? stored.submittedDraftFingerprint : null,
+    );
   }, [questionnaire, selectedMemberName, storageKey]);
+
+  useEffect(() => {
+    if (!state.response || state.response.id === acknowledgedResponseId || !pendingDraftFingerprint) {
+      return;
+    }
+
+    setAcknowledgedResponseId(state.response.id);
+    setSubmittedDraftFingerprint(pendingDraftFingerprint);
+  }, [acknowledgedResponseId, pendingDraftFingerprint, state.response]);
+
+  useEffect(() => {
+    if (!clientSubmissionId || !submittedDraftFingerprint || draftFingerprint === submittedDraftFingerprint) {
+      return;
+    }
+
+    setClientSubmissionId(nanoid(21));
+    setSubmittedDraftFingerprint(null);
+  }, [clientSubmissionId, draftFingerprint, submittedDraftFingerprint]);
 
   useEffect(() => {
     if (!clientSubmissionId) {
@@ -105,9 +147,10 @@ export function InternalAnswerForm({
         answers,
         respondentName,
         respondentNote,
+        submittedDraftFingerprint,
       }),
     );
-  }, [answers, clientSubmissionId, respondentName, respondentNote, storageKey]);
+  }, [answers, clientSubmissionId, respondentName, respondentNote, storageKey, submittedDraftFingerprint]);
 
   function setAnswer(questionId: string, value: AnswerValue) {
     setAnswers((current) => ({
@@ -133,10 +176,11 @@ export function InternalAnswerForm({
         <h2>内部作答</h2>
         <p className="lead compact">
           当前归因成员：{selectedMemberName}。提交会绑定到此发布版本，并用本机保存的 clientSubmissionId 保证刷新或重试不重复落库。
+          成功提交后，如继续修改姓名、备注或答案，系统会自动切换为新的提交批次。
         </p>
       </div>
 
-      <form action={formAction} className="form">
+      <form action={formAction} className="form" onSubmit={() => setPendingDraftFingerprint(draftFingerprint)}>
         <input name="versionId" type="hidden" value={versionId} />
         <input name="clientSubmissionId" type="hidden" value={clientSubmissionId} />
         <input name="answersJson" type="hidden" value={answersJson} />
